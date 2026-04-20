@@ -43,17 +43,20 @@ class RealtimeVoiceClient:
                     await ws.send(json.dumps({
                         "type": "session.update",
                         "session": {
-                            "modalities": ["text"],
+                            "modalities": ["text", "audio"],
+                            "voice": "shimmer",
                             "input_audio_format": "pcm16",
+                            "output_audio_format": "pcm16",
                             "turn_detection": {"type": "server_vad"},
                             "instructions": (
-                                "CRITICAL DIRECTIVE: You are a dual-purpose Logic Engine and Live Translator. "
-                                "1. If the user speaks a clear system command, find the EXACT match from this array: "
-                                "['next slide', 'previous slide', 'mute', 'unmute', 'volume up', 'volume down', 'full screen', 'escape', 'next track', 'previous track', 'play', 'pause']. "
-                                "ONLY output the exact matching string. If setting absolute volume, output 'set volume to <number>'. "
-                                "2. HOWEVER, if the user is speaking conversationally, giving a speech, or presenting (in ANY language), "
-                                "you must TRANSLATE it into English and output the translation prefixed precisely with 'SUBTITLE: '. "
-                                "Example: If user says 'Assalomu alaykum, bugun men loyihamni...', output 'SUBTITLE: Hello, today I will present my project...'"
+                                "You are AeroControl AI — a smart, friendly voice assistant embedded in a gesture-controlled desktop system. "
+                                "You speak concisely and naturally. You can chat, answer questions, tell jokes, and help the user. "
+                                "You understand Uzbek, Russian, English, and other languages. Always reply in the SAME language the user spoke. "
+                                "HOWEVER, if the user gives a clear system command, you MUST output ONLY the exact command string from this list "
+                                "(do NOT speak it aloud, just output it as text): "
+                                "['next slide', 'previous slide', 'mute', 'unmute', 'volume up', 'volume down', 'full screen', 'escape', "
+                                "'next track', 'previous track', 'play', 'pause', 'set volume to <number>']. "
+                                "For anything else — have a normal, helpful conversation via voice."
                             ),
                         }
                     }))
@@ -98,18 +101,56 @@ class RealtimeVoiceClient:
             pa.terminate()
 
     async def _receive_events(self, ws):
-        async for raw in ws:
-            if self._stop.is_set(): 
-                break
-            
-            event = json.loads(raw)
-            etype = event.get('type', '')
-            
-            if etype == 'response.output_item.done':
-                for item in event.get('item', {}).get('content', []):
-                    if item.get('type') == 'text':
-                        text = item.get('text', '').strip()
-                        if text:
-                            self.on_command_cb(text)
-            elif etype == 'error':
-                print(f"[Voice API ERROR] {event.get('error', {}).get('message', '')}")
+        # Speaker output stream for playing AI voice responses
+        pa = pyaudio.PyAudio()
+        speaker = None
+        try:
+            speaker = pa.open(
+                format=pyaudio.paInt16,
+                channels=AUDIO_CHANNELS,
+                rate=AUDIO_SAMPLE_RATE,
+                output=True,
+                frames_per_buffer=AUDIO_CHUNK,
+            )
+        except Exception as e:
+            print(f"[Voice] Could not open speaker: {e}")
+        
+        try:
+            async for raw in ws:
+                if self._stop.is_set(): 
+                    break
+                
+                event = json.loads(raw)
+                etype = event.get('type', '')
+                
+                # Play audio chunks from the AI response
+                if etype == 'response.audio.delta':
+                    audio_b64 = event.get('delta', '')
+                    if audio_b64 and speaker:
+                        try:
+                            audio_bytes = base64.b64decode(audio_b64)
+                            speaker.write(audio_bytes)
+                        except Exception:
+                            pass
+                
+                # Handle text responses (commands)
+                elif etype == 'response.output_item.done':
+                    for item in event.get('item', {}).get('content', []):
+                        if item.get('type') == 'text':
+                            text = item.get('text', '').strip()
+                            if text:
+                                print(f"[Voice AI] Text output: {text}")
+                                self.on_command_cb(text)
+                        # Log transcript of what AI said via audio
+                        elif item.get('type') == 'audio':
+                            transcript = item.get('transcript', '').strip()
+                            if transcript:
+                                print(f"[Voice AI] Said: \"{transcript}\"")
+                                
+                elif etype == 'error':
+                    print(f"[Voice API ERROR] {event.get('error', {}).get('message', '')}")
+        finally:
+            if speaker:
+                speaker.stop_stream()
+                speaker.close()
+            pa.terminate()

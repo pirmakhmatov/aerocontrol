@@ -217,10 +217,14 @@ def _opencv_thread_internal(voice):
             else:
                 reset_pinch()
                 reset_scroll()
+                if voice.is_listening:
+                    print("[Voice] >> Microphone DEACTIVATED")
                 voice.is_listening = False
         else:
             reset_pinch()
             reset_scroll()
+            if voice.is_listening:
+                print("[Voice] >> Microphone DEACTIVATED")
             voice.is_listening = False
                     
         if swipe_cooldown > 0: swipe_cooldown -= 1
