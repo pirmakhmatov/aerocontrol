@@ -861,5 +861,6 @@
             -0.4346799081843114
         ]
     ],
-    "NOTIFICATIONS_ENABLED": true
+    "NOTIFICATIONS_ENABLED": true,
+    "SUBTITLES_ENABLED": false
 }

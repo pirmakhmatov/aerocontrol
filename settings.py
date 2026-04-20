@@ -73,6 +73,9 @@ class AeroSettings(ctk.CTk):
         self.sub_var = ctk.BooleanVar(value=self.custom_db.get("SUBTITLES_ENABLED", True))
         ctk.CTkSwitch(self.sidebar, text="Live English Subtitles", variable=self.sub_var, command=self.update_toggles).pack(pady=10, padx=20, anchor="w")
         
+        self.ai_var = ctk.BooleanVar(value=self.custom_db.get("AI_ASSISTANT_ENABLED", True))
+        ctk.CTkSwitch(self.sidebar, text="AI Voice Assistant", variable=self.ai_var, command=self.update_toggles).pack(pady=10, padx=20, anchor="w")
+        
         # Proper slider for notification time
         self.time_var = ctk.IntVar(value=self.custom_db.get("NOTIFICATIONS_TIME", 2000))
         ctk.CTkLabel(self.sidebar, text="Notification Time (ms)").pack(pady=(20, 0), padx=20, anchor="w")
@@ -106,6 +109,7 @@ class AeroSettings(ctk.CTk):
         self.custom_db["NOTIFICATIONS_ENABLED"] = self.notif_var.get()
         self.custom_db["DEBUG_WINDOW_ENABLED"] = self.debug_var.get()
         self.custom_db["SUBTITLES_ENABLED"] = self.sub_var.get()
+        self.custom_db["AI_ASSISTANT_ENABLED"] = self.ai_var.get()
         
     def update_slider(self, value):
         val = int(value)

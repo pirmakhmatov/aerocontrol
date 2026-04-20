@@ -207,10 +207,12 @@ def _opencv_thread_internal(voice):
                         media_prev(); swipe_cooldown = 40
                         
                 if gtype == 'AI_MIC':
+                    ai_enabled = settings.get("AI_ASSISTANT_ENABLED", True)
                     if not voice.is_listening:
-                        print("[Voice] >> AI Assistant ACTIVATED 🎙️")
+                        mode = "AI Assistant 🎙️" if ai_enabled else "Command Mode (AI disabled)"
+                        print(f"[Voice] >> {mode} ACTIVATED")
                     voice.is_listening = True
-                    voice.play_audio = True  # Full conversation mode
+                    voice.play_audio = ai_enabled  # Only speak back if AI assistant is ON
                 elif gtype == 'FIST':
                     if not voice.is_listening:
                         print("[Voice] >> Command Mode ACTIVATED (Fist)")
