@@ -50,15 +50,17 @@ class RealtimeVoiceClient:
                             "output_audio_format": "pcm16",
                             "turn_detection": {"type": "server_vad"},
                             "instructions": (
-                                "You are AeroControl AI — a smart, friendly voice assistant embedded in a gesture-controlled desktop system. "
-                                "You speak concisely and naturally. You can chat, answer questions, tell jokes, and help the user. "
-                                "LANGUAGE RULE (CRITICAL): You MUST detect which language the user is speaking and ALWAYS respond in that EXACT SAME language. "
-                                "If they speak Uzbek — reply in Uzbek. If Russian — reply in Russian. If English — reply in English. NEVER default to Russian. "
-                                "HOWEVER, if the user gives a clear system command, you MUST output ONLY the exact command string from this list "
-                                "(do NOT speak it aloud, just output it as text): "
-                                "['next slide', 'previous slide', 'mute', 'unmute', 'volume up', 'volume down', 'full screen', 'escape', "
-                                "'next track', 'previous track', 'play', 'pause', 'set volume to <number>']. "
-                                "For anything else — have a normal, helpful conversation via voice."
+                                "You are AeroControl AI. You have two modes:\n\n"
+                                "MODE 1 - COMMAND: If the user does NOT start with a greeting, "
+                                "find the EXACT match from this command list and output ONLY that text (nothing else, no audio): "
+                                "['next slide', 'previous slide', 'mute', 'unmute', 'volume up', 'volume down', "
+                                "'full screen', 'escape', 'next track', 'previous track', 'play', 'pause', 'set volume to <number>']. "
+                                "If no command matches, output nothing.\n\n"
+                                "MODE 2 - ASSISTANT: If the user STARTS with a greeting word "
+                                "(hi, hello, hey, salom, assalomu alaykum, привет, здравствуй, or any greeting in any language), "
+                                "switch to friendly assistant mode. Respond naturally and helpfully. "
+                                "ALWAYS reply in the EXACT SAME language the user spoke. "
+                                "Prefix your text output with 'CONVERSATION: ' so the system knows to play your voice."
                             ),
                         }
                     }))
@@ -136,15 +138,20 @@ class RealtimeVoiceClient:
                             except Exception:
                                 pass
                 
-                # Handle text responses (commands)
+                # Handle text responses (commands or conversation marker)
                 elif etype == 'response.output_item.done':
                     for item in event.get('item', {}).get('content', []):
                         if item.get('type') == 'text':
                             text = item.get('text', '').strip()
                             if text:
-                                print(f"[Voice AI] Text output: {text}")
-                                self.on_command_cb(text)
-                        # Log transcript of what AI said via audio
+                                if text.lower().startswith('conversation:'):
+                                    self.play_audio = True
+                                    clean = text[len('conversation:'):].strip()
+                                    print(f"[Voice AI] Assistant reply: \"{clean}\"")
+                                else:
+                                    self.play_audio = False
+                                    print(f"[Voice AI] Command: {text}")
+                                    self.on_command_cb(text)
                         elif item.get('type') == 'audio':
                             transcript = item.get('transcript', '').strip()
                             if transcript:
