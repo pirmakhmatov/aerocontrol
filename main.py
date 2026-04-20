@@ -207,36 +207,35 @@ def _opencv_thread_internal(voice):
                         media_prev(); swipe_cooldown = 40
                         
                 if gtype == 'AI_MIC':
-                    ai_enabled = settings.get("AI_ASSISTANT_ENABLED", True)
+                    ai_mode = settings.get("AI_VOICE_MODE", "ASSISTANT")  # "COMMAND", "ASSISTANT"
                     if not voice.is_listening:
-                        mode = "AI Assistant 🎙️" if ai_enabled else "Command Mode (AI disabled)"
-                        print(f"[Voice] >> {mode} ACTIVATED")
+                        print(f"[Voice] >> {ai_mode} Mode ACTIVATED (AI_MIC)")
+                        voice.set_mode(ai_mode)
                     voice.is_listening = True
-                    voice.play_audio = ai_enabled  # Only speak back if AI assistant is ON
                 elif gtype == 'FIST':
                     if not voice.is_listening:
-                        print("[Voice] >> Command Mode ACTIVATED (Fist)")
+                        print("[Voice] >> COMMAND Mode ACTIVATED (Fist)")
+                        voice.set_mode("COMMAND")
                     voice.is_listening = True
-                    voice.play_audio = False  # Command-only, no AI voice
                 else:
                     if voice.is_listening:
                         print("[Voice] >> Microphone DEACTIVATED")
+                        voice._pending_response = True
                     voice.is_listening = False
-                    voice.play_audio = False
             else:
                 reset_pinch()
                 reset_scroll()
                 if voice.is_listening:
                     print("[Voice] >> Microphone DEACTIVATED")
+                    voice._pending_response = True
                 voice.is_listening = False
-                voice.play_audio = False
         else:
             reset_pinch()
             reset_scroll()
             if voice.is_listening:
                 print("[Voice] >> Microphone DEACTIVATED")
+                voice._pending_response = True
             voice.is_listening = False
-            voice.play_audio = False
                     
         if swipe_cooldown > 0: swipe_cooldown -= 1
         if click_cooldown > 0: click_cooldown -= 1

@@ -30,7 +30,7 @@ AeroControl is a background daemon that uses your webcam and AI to recognize han
 | **🎵 Media Playback** | Custom gestures for play/pause, next/prev track |
 | **📜 Scroll** | Jedi scroll gesture — wave your hand to scroll pages |
 | **🔍 Pinch-to-Zoom** | Two-handed pinch — spread/squeeze to zoom in/out |
-| **🎙 Voice Commands** | Show a fist to activate AI mic — speak commands in any language |
+| **🎙 Voice Commands** | **Fist** → Silent Command Mode, **AI Mic** → User-defined mode (Command vs Assistant) |
 | **🛡 Audience Proofing** | Face detection ensures only the presenter's hand is tracked |
 | **⚙️ Custom Gestures** | Record your own hand shapes via the settings GUI |
 
@@ -122,7 +122,16 @@ Launch from the system tray or run `python settings.py` directly.
 
 ## 🎙 Voice Commands
 
-Activate the AI microphone by showing a **fist** (✊) gesture. Speak commands in **any language** — the AI translates them to actions:
+AeroControl features a dual-mode voice system powered by OpenAI's Realtime API:
+
+1. **Silent Command Mode (✊ Fist)**: Best for quick, hands-free adjustments. The AI listens, executes the command silently (no speech back), and ignores conversational filler.
+2. **AI Assistant Mode (🎙 Mic Gesture)**: A full conversational experience. The AI talks back to you, answers questions, and can still execute commands when mixed into conversation.
+
+> [!TIP]
+> You can change the behavior of the Mic gesture in the **Settings GUI** to switch between strict "Command Only" or "AI Assistant" modes.
+
+### Whitelisted Commands
+Regardless of mode, these commands are instantly matched and executed:
 
 | Command | Action |
 |---|---|

@@ -223,18 +223,21 @@ def execute_voice_command(text):
     print(f"Voice Command Detected: {text}")
     
     import re
-    # Check for direct volume setting
-    vol_match = re.search(r'volume.*?(\d+)', text) or re.search(r'set.*?(\d+)', text)
-    if vol_match and 'volume' in text:
-        vol = int(vol_match.group(1))
-        vol = max(0, min(100, vol)) # Clamp 0-100
-        if sys.platform.startswith('linux'):
-            os.system(f"amixer -D pulse sset Master {vol}% > /dev/null 2>&1")
-        else:
-            # On windows/mac absolute volume via pyautogui isn't possible, we fallback
-            print(f"Absolute volume {vol} not fully supported on this OS via pyautogui.")
-        print(f"Action: Set Volume to {vol}% (VOICE)")
-        return
+    # Check for direct volume setting (e.g., "set volume to 15", "volume 80")
+    vol_match = re.search(r'(?:volume|set).*?(\d+)', text)
+    if vol_match:
+        try:
+            vol = int(vol_match.group(1))
+            vol = max(0, min(100, vol)) # Clamp 0-100
+            if sys.platform.startswith('linux'):
+                os.system(f"amixer -D pulse sset Master {vol}% > /dev/null 2>&1")
+            else:
+                # On windows/mac absolute volume via pyautogui isn't possible, we fallback
+                print(f"Absolute volume {vol} not fully supported on this OS via pyautogui.")
+            print(f"Action: Set Volume to {vol}% (VOICE)")
+            return
+        except (ValueError, IndexError):
+            pass
 
     if 'next slide' in text:
         next_slide()

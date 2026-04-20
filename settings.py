@@ -29,7 +29,7 @@ class AeroSettings(ctk.CTk):
                 
         self.current_recording = None
         self.recording_frames = []       # list of normalized frame captures
-        self.recording_countdown = 0     # countdown timer in frames (at 15ms = ~67fps)
+        self.recording_start_time = 0    # time.time() when recording started
         self.recording_progress = 0.0    # 0.0 to 1.0 for progress bar
         self.actions = [
             ('0', 'SCROLL', 'Jedi Scroll'),
@@ -79,6 +79,23 @@ class AeroSettings(ctk.CTk):
         self.ai_var = ctk.BooleanVar(value=self.custom_db.get("AI_ASSISTANT_ENABLED", True))
         ctk.CTkSwitch(self.sidebar, text="AI Voice Assistant", variable=self.ai_var, command=self.update_toggles).pack(pady=10, padx=20, anchor="w")
         
+        # AI Voice Mode selector
+        ctk.CTkLabel(self.sidebar, text="AI Mic Gesture Mode", font=ctk.CTkFont(size=14, weight="bold")).pack(pady=(16, 4), padx=20, anchor="w")
+        ctk.CTkLabel(
+            self.sidebar,
+            text="Command Only: executes commands silently\nAI Assistant: also talks back conversationally",
+            font=ctk.CTkFont(size=11), text_color="#888888", justify="left"
+        ).pack(pady=(0, 6), padx=20, anchor="w")
+        
+        current_mode = self.custom_db.get("AI_VOICE_MODE", "ASSISTANT")
+        self.ai_mode_var = ctk.StringVar(value=current_mode)
+        ctk.CTkSegmentedButton(
+            self.sidebar,
+            values=["COMMAND", "ASSISTANT"],
+            variable=self.ai_mode_var,
+            command=self.update_ai_mode
+        ).pack(pady=4, padx=20, fill="x")
+        
         # Proper slider for notification time
         self.time_var = ctk.IntVar(value=self.custom_db.get("NOTIFICATIONS_TIME", 2000))
         ctk.CTkLabel(self.sidebar, text="Notification Time (ms)").pack(pady=(20, 0), padx=20, anchor="w")
@@ -104,11 +121,11 @@ class AeroSettings(ctk.CTk):
         self.update_video()
         
     def start_recording(self, action_id):
+        import time
         self.current_recording = action_id
         self.recording_frames = []
         self.recording_progress = 0.0
-        # Start with a 3-second countdown (3000ms / 15ms per frame = 200 frames)
-        self.recording_countdown = 200
+        self.recording_start_time = time.time() + 3.0  # 3 second countdown
         action_name = dict([(a[1], a[2]) for a in self.actions]).get(action_id, "")
         self.status_lbl.configure(text=f"Get ready... Recording: {action_name}", text_color="#ffaa00")
         
@@ -117,6 +134,11 @@ class AeroSettings(ctk.CTk):
         self.custom_db["DEBUG_WINDOW_ENABLED"] = self.debug_var.get()
         self.custom_db["SUBTITLES_ENABLED"] = self.sub_var.get()
         self.custom_db["AI_ASSISTANT_ENABLED"] = self.ai_var.get()
+        self.custom_db["AI_VOICE_MODE"] = self.ai_mode_var.get()
+
+    def update_ai_mode(self, value):
+        self.custom_db["AI_VOICE_MODE"] = value
+        print(f"[Settings] AI Voice Mode set to: {value}")
         
     def update_slider(self, value):
         val = int(value)
@@ -146,6 +168,7 @@ class AeroSettings(ctk.CTk):
         return normalized
 
     def update_video(self):
+        import time
         TARGET_FRAMES = 100
         ret, frame = self.cap.read()
         if ret:
@@ -154,11 +177,11 @@ class AeroSettings(ctk.CTk):
             
             if self.current_recording:
                 action_name = dict([(a[1], a[2]) for a in self.actions]).get(self.current_recording, "")
+                now = time.time()
                 
-                if self.recording_countdown > 0:
-                    # Countdown phase
-                    self.recording_countdown -= 1
-                    secs = int(self.recording_countdown / 66.6) + 1
+                if now < self.recording_start_time:
+                    # Countdown phase — show exact remaining seconds
+                    secs = int(self.recording_start_time - now) + 1
                     self.status_lbl.configure(
                         text=f"Get ready in {secs}... | {action_name}",
                         text_color="#ffaa00"
