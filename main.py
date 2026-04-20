@@ -206,26 +206,35 @@ def _opencv_thread_internal(voice):
                         print("[Gesture] >> Previous Track")
                         media_prev(); swipe_cooldown = 40
                         
-                if gtype in ('AI_MIC', 'FIST'):
+                if gtype == 'AI_MIC':
                     if not voice.is_listening:
-                        print("[Voice] >> Microphone ACTIVATED (Fist detected)")
+                        print("[Voice] >> AI Assistant ACTIVATED 🎙️")
                     voice.is_listening = True
+                    voice.play_audio = True  # Full conversation mode
+                elif gtype == 'FIST':
+                    if not voice.is_listening:
+                        print("[Voice] >> Command Mode ACTIVATED (Fist)")
+                    voice.is_listening = True
+                    voice.play_audio = False  # Command-only, no AI voice
                 else:
                     if voice.is_listening:
                         print("[Voice] >> Microphone DEACTIVATED")
                     voice.is_listening = False
+                    voice.play_audio = False
             else:
                 reset_pinch()
                 reset_scroll()
                 if voice.is_listening:
                     print("[Voice] >> Microphone DEACTIVATED")
                 voice.is_listening = False
+                voice.play_audio = False
         else:
             reset_pinch()
             reset_scroll()
             if voice.is_listening:
                 print("[Voice] >> Microphone DEACTIVATED")
             voice.is_listening = False
+            voice.play_audio = False
                     
         if swipe_cooldown > 0: swipe_cooldown -= 1
         if click_cooldown > 0: click_cooldown -= 1

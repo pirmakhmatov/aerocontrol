@@ -13,6 +13,7 @@ class RealtimeVoiceClient:
         self._stop = threading.Event()
         self.thread = None
         self.is_listening = False
+        self.play_audio = False  # True = AI assistant mode, False = command-only mode
 
     def start(self):
         self._stop.clear()
@@ -51,7 +52,8 @@ class RealtimeVoiceClient:
                             "instructions": (
                                 "You are AeroControl AI — a smart, friendly voice assistant embedded in a gesture-controlled desktop system. "
                                 "You speak concisely and naturally. You can chat, answer questions, tell jokes, and help the user. "
-                                "You understand Uzbek, Russian, English, and other languages. Always reply in the SAME language the user spoke. "
+                                "LANGUAGE RULE (CRITICAL): You MUST detect which language the user is speaking and ALWAYS respond in that EXACT SAME language. "
+                                "If they speak Uzbek — reply in Uzbek. If Russian — reply in Russian. If English — reply in English. NEVER default to Russian. "
                                 "HOWEVER, if the user gives a clear system command, you MUST output ONLY the exact command string from this list "
                                 "(do NOT speak it aloud, just output it as text): "
                                 "['next slide', 'previous slide', 'mute', 'unmute', 'volume up', 'volume down', 'full screen', 'escape', "
@@ -123,15 +125,16 @@ class RealtimeVoiceClient:
                 event = json.loads(raw)
                 etype = event.get('type', '')
                 
-                # Play audio chunks from the AI response
+                # Play audio chunks from the AI response (only in assistant mode)
                 if etype == 'response.audio.delta':
-                    audio_b64 = event.get('delta', '')
-                    if audio_b64 and speaker:
-                        try:
-                            audio_bytes = base64.b64decode(audio_b64)
-                            speaker.write(audio_bytes)
-                        except Exception:
-                            pass
+                    if self.play_audio:
+                        audio_b64 = event.get('delta', '')
+                        if audio_b64 and speaker:
+                            try:
+                                audio_bytes = base64.b64decode(audio_b64)
+                                speaker.write(audio_bytes)
+                            except Exception:
+                                pass
                 
                 # Handle text responses (commands)
                 elif etype == 'response.output_item.done':
