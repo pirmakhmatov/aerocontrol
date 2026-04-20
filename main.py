@@ -59,17 +59,55 @@ def _opencv_thread_internal(voice):
     calibration_frames = 20
     valid_sizes = []
     
-    # Fully invisible bootstrap calibration
+    # Always show camera during calibration so user can position their hand
     while is_running and len(valid_sizes) < calibration_frames:
         ret, frame = cap.read()
         if not ret: continue
         frame = cv2.flip(frame, 1)
-        frame, all_lm = detector.find_hands(frame, draw=False)
+        frame, all_lm = detector.find_hands(frame, draw=True)
+        
+        # Draw calibration progress bar and instructions
+        progress = len(valid_sizes) / calibration_frames
+        bar_w = int(frame.shape[1] * 0.6)
+        bar_x = (frame.shape[1] - bar_w) // 2
+        bar_y = frame.shape[0] - 60
+        cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_w, bar_y + 30), (50, 50, 50), -1)
+        cv2.rectangle(frame, (bar_x, bar_y), (bar_x + int(bar_w * progress), bar_y + 30), (0, 255, 150), -1)
+        cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_w, bar_y + 30), (200, 200, 200), 2)
+        
+        status_text = "Show your open hand to the camera..." if not all_lm else f"Calibrating... {len(valid_sizes)}/{calibration_frames}"
+        cv2.putText(frame, status_text, (bar_x, bar_y - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 150), 2)
+        cv2.putText(frame, "AeroControl Calibration", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 200, 100), 2)
+        
         if all_lm:
             wrist = all_lm[0][0]
             middle_tip = all_lm[0][12]
             dist = math.hypot(wrist[0] - middle_tip[0], wrist[1] - middle_tip[1])
+            
+            # Draw green arrow from wrist to middle fingertip showing measurement
+            w_pt = (int(wrist[0]), int(wrist[1]))
+            m_pt = (int(middle_tip[0]), int(middle_tip[1]))
+            cv2.arrowedLine(frame, w_pt, m_pt, (0, 255, 100), 3, tipLength=0.15)
+            cv2.circle(frame, w_pt, 8, (0, 200, 255), -1)
+            cv2.circle(frame, m_pt, 8, (0, 200, 255), -1)
+            
+            # Show size label next to the arrow
+            mid_x = (w_pt[0] + m_pt[0]) // 2 + 15
+            mid_y = (w_pt[1] + m_pt[1]) // 2
+            cv2.putText(frame, f"{dist:.0f} px", (mid_x, mid_y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
+            
             valid_sizes.append(dist)
+            print(f"  [Calibration] Frame {len(valid_sizes)}/{calibration_frames} | Hand Size: {dist:.1f} px")
+        
+        cv2.imshow("AeroControl Calibration", frame)
+        cv2.waitKey(1)
+    
+    # Close calibration window
+    try:
+        cv2.destroyWindow("AeroControl Calibration")
+        cv2.waitKey(1)
+    except:
+        pass
             
     if valid_sizes:
         enrolled_hand_size = sum(valid_sizes) / len(valid_sizes)
@@ -144,25 +182,37 @@ def _opencv_thread_internal(voice):
                     
                 if swipe_cooldown == 0:
                     if gtype in ["NEXT_SLIDE", "OPEN_PALM"]:
+                        print(f"[Gesture] >> Next Slide ({gtype})")
                         next_slide(); swipe_cooldown = 40
                     elif gtype in ["PREV_SLIDE", "PEACE"]:
+                        print(f"[Gesture] >> Previous Slide ({gtype})")
                         prev_slide(); swipe_cooldown = 40
                     elif gtype == "VOL_UP":
+                        print("[Gesture] >> Volume Up")
                         volume_up(); swipe_cooldown = 4
                     elif gtype == "VOL_DOWN":
+                        print("[Gesture] >> Volume Down")
                         volume_down(); swipe_cooldown = 4
                     elif gtype == "MUTE":
+                        print("[Gesture] >> Mute Toggle")
                         toggle_mute(); swipe_cooldown = 40
                     elif gtype == "PLAY_PAUSE":
+                        print("[Gesture] >> Play/Pause")
                         media_play_pause(); swipe_cooldown = 40
                     elif gtype == "NEXT_TRACK":
+                        print("[Gesture] >> Next Track")
                         media_next(); swipe_cooldown = 40
                     elif gtype == "PREV_TRACK":
+                        print("[Gesture] >> Previous Track")
                         media_prev(); swipe_cooldown = 40
                         
                 if gtype in ('AI_MIC', 'FIST'):
+                    if not voice.is_listening:
+                        print("[Voice] >> Microphone ACTIVATED (Fist detected)")
                     voice.is_listening = True
                 else:
+                    if voice.is_listening:
+                        print("[Voice] >> Microphone DEACTIVATED")
                     voice.is_listening = False
             else:
                 reset_pinch()
