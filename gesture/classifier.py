@@ -43,18 +43,29 @@ class GestureClassifier:
             min_dist = float('inf')
             
             for action, template in self.custom_db.items():
-                if not isinstance(template, list):
+                if not isinstance(template, list) or len(template) == 0:
                     continue
-                    
-                total_dist = 0
-                for i in range(21):
-                    dx = normalized[i][0] - template[i][0]
-                    dy = normalized[i][1] - template[i][1]
-                    total_dist += math.hypot(dx, dy)
-                avg_dist = total_dist / 21.0
                 
-                if avg_dist < min_dist:
-                    min_dist = avg_dist
+                # Detect format: multi-frame (list of lists) vs legacy (flat list of tuples)
+                is_multi_frame = isinstance(template[0], list)
+                frames = template if is_multi_frame else [template]
+                
+                # Best-of-N: find the closest frame in the template set
+                action_min_dist = float('inf')
+                for frame_landmarks in frames:
+                    if len(frame_landmarks) < 21:
+                        continue
+                    total_dist = 0
+                    for i in range(21):
+                        dx = normalized[i][0] - frame_landmarks[i][0]
+                        dy = normalized[i][1] - frame_landmarks[i][1]
+                        total_dist += math.hypot(dx, dy)
+                    avg_dist = total_dist / 21.0
+                    if avg_dist < action_min_dist:
+                        action_min_dist = avg_dist
+                
+                if action_min_dist < min_dist:
+                    min_dist = action_min_dist
                     best_match = action
                     
             # 0.28 is our custom gesture match threshold. 

@@ -28,6 +28,9 @@ class AeroSettings(ctk.CTk):
                 pass
                 
         self.current_recording = None
+        self.recording_frames = []       # list of normalized frame captures
+        self.recording_countdown = 0     # countdown timer in frames (at 15ms = ~67fps)
+        self.recording_progress = 0.0    # 0.0 to 1.0 for progress bar
         self.actions = [
             ('0', 'SCROLL', 'Jedi Scroll'),
             ('1', 'NEXT_SLIDE', 'Next Slide'),
@@ -102,8 +105,12 @@ class AeroSettings(ctk.CTk):
         
     def start_recording(self, action_id):
         self.current_recording = action_id
+        self.recording_frames = []
+        self.recording_progress = 0.0
+        # Start with a 3-second countdown (3000ms / 15ms per frame = 200 frames)
+        self.recording_countdown = 200
         action_name = dict([(a[1], a[2]) for a in self.actions]).get(action_id, "")
-        self.status_lbl.configure(text=f"HOLD STILL! Recording: {action_name}", text_color="#ff5555")
+        self.status_lbl.configure(text=f"Get ready... Recording: {action_name}", text_color="#ffaa00")
         
     def update_toggles(self):
         self.custom_db["NOTIFICATIONS_ENABLED"] = self.notif_var.get()
@@ -139,17 +146,56 @@ class AeroSettings(ctk.CTk):
         return normalized
 
     def update_video(self):
+        TARGET_FRAMES = 100
         ret, frame = self.cap.read()
         if ret:
             frame = cv2.flip(frame, 1)
             frame, all_lm = self.detector.find_hands(frame, draw=True)
             
-            if self.current_recording and all_lm:
-                normalized = self.normalize_landmarks(all_lm[0])
-                self.custom_db[self.current_recording] = normalized
-                self.status_lbl.configure(text=f"Successfully Saved!", text_color="#55ff55")
-                self.current_recording = None
-                self.refresh_buttons()
+            if self.current_recording:
+                action_name = dict([(a[1], a[2]) for a in self.actions]).get(self.current_recording, "")
+                
+                if self.recording_countdown > 0:
+                    # Countdown phase
+                    self.recording_countdown -= 1
+                    secs = int(self.recording_countdown / 66.6) + 1
+                    self.status_lbl.configure(
+                        text=f"Get ready in {secs}... | {action_name}",
+                        text_color="#ffaa00"
+                    )
+                elif len(self.recording_frames) < TARGET_FRAMES:
+                    # Recording phase
+                    if all_lm:
+                        normalized = self.normalize_landmarks(all_lm[0])
+                        self.recording_frames.append(normalized)
+                    
+                    self.recording_progress = len(self.recording_frames) / TARGET_FRAMES
+                    count = len(self.recording_frames)
+                    self.status_lbl.configure(
+                        text=f"🔴 Recording {action_name}... Rotate slowly! [{count}/{TARGET_FRAMES}]",
+                        text_color="#ff5555"
+                    )
+                    
+                    # Draw progress bar on frame
+                    bar_w = int(frame.shape[1] * 0.7)
+                    bar_x = (frame.shape[1] - bar_w) // 2
+                    bar_y = frame.shape[0] - 50
+                    cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_w, bar_y + 25), (40, 40, 40), -1)
+                    cv2.rectangle(frame, (bar_x, bar_y), (bar_x + int(bar_w * self.recording_progress), bar_y + 25), (0, 80, 255), -1)
+                    cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_w, bar_y + 25), (180, 180, 180), 2)
+                    cv2.putText(frame, f"Recording: {count}/{TARGET_FRAMES} — Rotate your hand!",
+                                (bar_x, bar_y - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 120, 255), 2)
+                else:
+                    # Done!
+                    if self.recording_frames:
+                        self.custom_db[self.current_recording] = self.recording_frames
+                        self.status_lbl.configure(
+                            text=f"✅ Saved {len(self.recording_frames)} frames for {action_name}!",
+                            text_color="#55ff55"
+                        )
+                        self.refresh_buttons()
+                    self.current_recording = None
+                    self.recording_frames = []
                 
             # Convert CV2 Frame to Tkinter CTkImage natively
             cv2data = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
