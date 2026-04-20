@@ -170,8 +170,56 @@ def handle_zoom(dist, last_zoom_dist):
         return dist # reset baseline after zooming
     return last_zoom_dist
 
+subtitle_proc = None
+
+def get_subtitle_proc():
+    global subtitle_proc
+    if subtitle_proc is None:
+        try:
+            import subprocess
+            subtitle_proc = subprocess.Popen(["python", "subtitles_ui.py"], stdin=subprocess.PIPE, text=True, bufsize=1)
+        except Exception as e:
+            print("Failed to start subtitles_ui:", e)
+    return subtitle_proc
+
+def stop_subtitles():
+    global subtitle_proc
+    if subtitle_proc:
+        subtitle_proc.terminate()
+        subtitle_proc = None
+
 def execute_voice_command(text):
+    original_text = text
     text = text.lower()
+    
+    if text.startswith("subtitle: "):
+        sub_text = original_text[10:].strip() # preserve original casing for neat subtitles
+        settings = {}
+        if os.path.exists("custom_gestures.json"):
+            try:
+                with open("custom_gestures.json", "r") as f:
+                    settings = json.load(f)
+            except Exception:
+                pass
+        
+        proc = get_subtitle_proc()
+        if settings.get("SUBTITLES_ENABLED", True):
+            if proc and proc.stdin:
+                try:
+                    proc.stdin.write(sub_text + "\n")
+                    proc.stdin.flush()
+                except:
+                    pass
+        else:
+             if proc and proc.stdin:
+                  try:
+                      proc.stdin.write("CMD:HIDE\n")
+                      proc.stdin.flush()
+                  except:
+                      pass
+        print(f"Action: Subtitle Displayed -> {sub_text}")
+        return
+        
     print(f"Voice Command Detected: {text}")
     
     import re

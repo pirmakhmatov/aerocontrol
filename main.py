@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw
 from gesture.detector import HandDetector
 from gesture.classifier import GestureClassifier
 from gesture.face_detector import FaceDetector
-from gesture.actions import (next_slide, prev_slide, set_volume_from_pinch, move_laser, click_mouse, execute_voice_command, reset_pinch, handle_scroll, reset_scroll, volume_up, volume_down, toggle_mute, media_play_pause, media_next, media_prev, handle_zoom)
+from gesture.actions import (next_slide, prev_slide, set_volume_from_pinch, move_laser, click_mouse, execute_voice_command, reset_pinch, handle_scroll, reset_scroll, volume_up, volume_down, toggle_mute, media_play_pause, media_next, media_prev, handle_zoom, stop_subtitles)
 from voice.realtime_client import RealtimeVoiceClient
 from config import CAM_INDEX, CAM_WIDTH, CAM_HEIGHT
 
@@ -204,6 +204,7 @@ def opencv_thread(voice):
 def on_quit(icon, item):
     global is_running
     is_running = False
+    stop_subtitles()
     icon.stop()
 
 def on_toggle(icon, item):

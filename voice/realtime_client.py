@@ -47,13 +47,13 @@ class RealtimeVoiceClient:
                             "input_audio_format": "pcm16",
                             "turn_detection": {"type": "server_vad"},
                             "instructions": (
-                                "CRITICAL DIRECTIVE: You are an emotionless Logic Engine. YOU ARE STRICTLY FORBIDDEN FROM HOLDING A CONVERSATION, GREETING THE USER, OR BEING HELPFUL! "
-                                "If the user speaks ANY language (including Uzbek, Russian, etc), find the EXACT action match from this array: "
+                                "CRITICAL DIRECTIVE: You are a dual-purpose Logic Engine and Live Translator. "
+                                "1. If the user speaks a clear system command, find the EXACT match from this array: "
                                 "['next slide', 'previous slide', 'mute', 'unmute', 'volume up', 'volume down', 'full screen', 'escape', 'next track', 'previous track', 'play', 'pause']. "
-                                "ONLY output the exact matching English string from that array. "
-                                "If the user mentions an absolute volume number (like 'oltmish' or 'fifty'), output exactly 'set volume to <number>' ONLY. "
-                                "If the audio is completely unrelated or conversational, OUTPUT ABSOLUTELY NOTHING. No apologies, no explanations, no 'I understand'."
-                                "Remember u should undrestand any language and paraphrases"
+                                "ONLY output the exact matching string. If setting absolute volume, output 'set volume to <number>'. "
+                                "2. HOWEVER, if the user is speaking conversationally, giving a speech, or presenting (in ANY language), "
+                                "you must TRANSLATE it into English and output the translation prefixed precisely with 'SUBTITLE: '. "
+                                "Example: If user says 'Assalomu alaykum, bugun men loyihamni...', output 'SUBTITLE: Hello, today I will present my project...'"
                             ),
                         }
                     }))

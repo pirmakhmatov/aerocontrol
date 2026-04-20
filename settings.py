@@ -70,6 +70,9 @@ class AeroSettings(ctk.CTk):
         self.debug_var = ctk.BooleanVar(value=self.custom_db.get("DEBUG_WINDOW_ENABLED", False))
         ctk.CTkSwitch(self.sidebar, text="Daemon CV2 Debug Window", variable=self.debug_var, command=self.update_toggles).pack(pady=10, padx=20, anchor="w")
         
+        self.sub_var = ctk.BooleanVar(value=self.custom_db.get("SUBTITLES_ENABLED", True))
+        ctk.CTkSwitch(self.sidebar, text="Live English Subtitles", variable=self.sub_var, command=self.update_toggles).pack(pady=10, padx=20, anchor="w")
+        
         # Proper slider for notification time
         self.time_var = ctk.IntVar(value=self.custom_db.get("NOTIFICATIONS_TIME", 2000))
         ctk.CTkLabel(self.sidebar, text="Notification Time (ms)").pack(pady=(20, 0), padx=20, anchor="w")
@@ -102,6 +105,7 @@ class AeroSettings(ctk.CTk):
     def update_toggles(self):
         self.custom_db["NOTIFICATIONS_ENABLED"] = self.notif_var.get()
         self.custom_db["DEBUG_WINDOW_ENABLED"] = self.debug_var.get()
+        self.custom_db["SUBTITLES_ENABLED"] = self.sub_var.get()
         
     def update_slider(self, value):
         val = int(value)
