@@ -30,7 +30,7 @@ AeroControl is a background daemon that uses your webcam and AI to recognize han
 | **🎵 Media Playback** | Custom gestures for play/pause, next/prev track |
 | **📜 Scroll** | Jedi scroll gesture — wave your hand to scroll pages |
 | **🔍 Pinch-to-Zoom** | Two-handed pinch — spread/squeeze to zoom in/out |
-| **🎙 Voice Commands** | **Fist** → Silent Command Mode, **AI Mic** → User-defined mode (Command vs Assistant) |
+| **🎙 Voice Commands/Assistant** | **Fist** → Silent Command Mode, **AI Mic** → User-defined mode (Command vs Assistant) |
 | **🛡 Audience Proofing** | Face detection ensures only the presenter's hand is tracked |
 | **⚙️ Custom Gestures** | Record your own hand shapes via the settings GUI |
 
@@ -182,3 +182,6 @@ This project was built for the **April 2026 AI Hackathon** at the Qarshi Preside
 ## 👤 Author
 
 **Pirmakhmatov** — [@pirmakhmatov](https://github.com/pirmakhmatov)
+**Telegram** - [@pirmaxmatov](t.me/pirmaxmatov)
+**Instagram** - [@pirmakhmatov_](https://www.instagram.com/pirmakhmatov_)
+**TG Channel** - [@pirmaxmatovs](t.me/pirmaxmatovs)
