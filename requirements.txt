@@ -1,0 +1,10 @@
+opencv-python
+mediapipe
+pyautogui
+pyaudio
+websockets
+python-dotenv
+pystray
+Pillow
+customtkinter
+numpy
